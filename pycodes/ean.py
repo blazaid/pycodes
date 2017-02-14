@@ -1,4 +1,5 @@
-from pycodes.exceptions import CharacterNotAllowed, BadCodeLength, WrongChecksum
+from pycodes.exceptions import CharacterNotAllowed, BadCodeLength, WrongChecksum, \
+    EmptyCode
 
 
 class Ean13:
@@ -16,33 +17,39 @@ class Ean13:
         :raise CharacterNotAllowed: If the code contains at least a non-digit
             character.
         :raise WrongChecksum: If the code has checksum but is incorrect
+        :raise EmptyCode: When the code isNone or empty.
         """
         super().__init__()
 
-        # First check if all the characters of the code are digits.
+        # First, check the code is not None not empty
+        if code is None or not code.strip():
+            raise EmptyCode()
+        else:
+            code = code.strip()
+        # Next, check if all the characters of the code are digits
         if not code.isdigit():
             for c in code:
                 if not c.isdigit():
                     raise CharacterNotAllowed(c)
 
         if not checksum:
-            if len(code) != 13:
-                raise BadCodeLength(len(code), 13)
-
-            self.code = self.code
-            self.checksum = self.calculate_checksum(self.code)
-        else:
             if len(code) != 12:
                 raise BadCodeLength(len(code), 12)
+
+            self.code = code
+            self.checksum = self.calculate_checksum(self.code)
+        else:
+            if len(code) != 13:
+                raise BadCodeLength(len(code), 13)
             if code[-1:] != self.calculate_checksum(code[:-1]):
                 raise WrongChecksum(
                     self.__class__.__name__,
                     self.calculate_checksum(code[:-1]),
-                    code[-1:]
+                    code[:-1],
                 )
 
-            self.code = self.code[:-1]
-            self.checksum = self.code[-1:]
+            self.code = code[:-1]
+            self.checksum = code[-1:]
 
     @staticmethod
     def calculate_checksum(code: str) -> str:
